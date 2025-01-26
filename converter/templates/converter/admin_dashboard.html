@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ダッシュボード</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        pre {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>管理者ダッシュボード</h1>
+    <a href="{% url 'index' %}">ホームに戻る</a>
+    <a href="{% url 'create_group' %}">新しいグループを作成</a>
+
+    <h2>グループ一覧</h2>
+    <ul>
+        {% for group in groups %}
+        <li>
+            <strong>IPアドレス: {{ group.ip_address }}</strong>
+            <small>作成日時: {{ group.created_at }}</small>
+            <form action="{% url 'delete_group' group.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">削除</button>
+            </form>
+            <h3>メンバー一覧</h3>
+            <ul>
+                {% for member in group.members %}
+                <li>
+                    <a href="{% url 'view_member_code' member.id %}">{{ member.username }}</a>
+                    <small>参加日時: {{ member.date_joined|date:"Y-m-d H:i" }}</small>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

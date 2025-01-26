@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新しいグループを作成</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .messages {
+            margin-top: 20px;
+        }
+        .messages .success {
+            color: #28a745;
+        }
+        .messages .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>新しいグループを作成</h1>
+
+    <!-- メッセージ表示 -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- フォーム -->
+    <form method="post">
+        {% csrf_token %}
+        <label for="ip_address">IPアドレス:</label>
+        <input type="text" id="ip_address" name="ip_address" required placeholder="例: 192.168.1.1">
+        <button type="submit">作成</button>
+    </form>
+
+    <!-- ダッシュボードに戻るリンク -->
+    <a href="{% url 'admin_dashboard' %}">ダッシュボードに戻る</a>
+</body>
+</html>

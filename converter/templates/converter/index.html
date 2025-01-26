@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本語コード実行</title>
+    <style>
+        :root {
+            --primary-color: #28a745;
+            --secondary-color: #007bff;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 2rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .auth-info {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .code-section, .group-section {
+            margin-bottom: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 1rem;
+            resize: vertical;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .run-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .run-btn:hover {
+            background-color: #218838;
+        }
+
+        .group-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .group-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .leave-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .leave-btn:hover {
+            background-color: #c82333;
+        }
+
+        pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .group-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .member-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .member-item {
+            padding: 0.5rem;
+            background: var(--background-color);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 認証情報 -->
+        <div class="auth-info">
+            {% if user.is_authenticated %}
+                <p>👤 {{ user.username }} さん 
+                    <a href="{% url 'logout' %}" style="color: var(--secondary-color);">ログアウト</a>
+                    {% if user.is_staff %}
+                        | <a href="{% url 'admin_dashboard' %}" style="color: var(--primary-color);">管理者ダッシュボード</a>
+                    {% endif %}
+                </p>
+            {% else %}
+                <p>
+                    <a href="{% url 'login' %}" style="color: var(--secondary-color);">ログイン</a> | 
+                    <a href="{% url 'register' %}" style="color: var(--primary-color);">新規登録</a>
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- コード入力セクション -->
+        <div class="code-section">
+            <h2>コード入力</h2>
+            <textarea 
+                id="japaneseCode" 
+                placeholder="ここに日本語でコードを入力"
+            ></textarea>
+            <button class="run-btn" onclick="executeCode()">▶ 実行</button>
+            
+            <h2>実行結果</h2>
+            <pre id="output"></pre>
+        </div>
+
+        <!-- グループ管理セクション -->
+        <div class="group-section">
+            <h2>グループ管理</h2>
+            <div class="group-form">
+                <input 
+                    type="text" 
+                    id="ipAddress" 
+                    placeholder="例: 192.168.1.1"
+                >
+                <button class="group-btn" onclick="joinGroup()">グループ参加</button>
+                <button class="leave-btn" onclick="leaveGroup()" style="display: none;">グループを抜ける</button>
+            </div>
+            
+            <div id="statusMessage"></div>
+            <div id="groupStatus" style="display: none;">
+                <p>現在、グループに参加しています。</p>
+            </div>
+            
+            <h3>グループメンバー</h3>
+            <ul class="member-list" id="groupMembers"></ul>
+        </div>
+    </div>
+
+    <script>
+        // 自動保存機能
+        const editor = document.getElementById('japaneseCode');
+        const ipAddressInput = document.getElementById('ipAddress');
+
+        // 数秒ごとにコードを保存
+        setInterval(() => {
+            if (editor.value.trim() && ipAddressInput.value.trim()) {
+                saveCode();
+            }
+        }, 5000); // 5秒ごとに保存
+
+        async function saveCode() {
+            const ipAddress = ipAddressInput.value;
+            const japaneseCode = editor.value;
+
+            try {
+                const response = await fetch('/save-code/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `ip_address=${encodeURIComponent(ipAddress)}&japanese_code=${encodeURIComponent(japaneseCode)}`,
+                });
+
+                const data = await response.json();
+                if (data.status !== 'success') {
+                    console.error('自動保存に失敗しました:', data.message);
+                }
+            } catch (error) {
+                console.error('自動保存中にエラーが発生しました:', error);
+            }
+        }
+
+        // コード実行処理
+        async function executeCode() {
+            const output = document.getElementById('output');
+            output.textContent = '実行中...';
+            
+            try {
+                const response = await fetch('/run/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `japanese_code=${encodeURIComponent(editor.value)}`,
+                });
+                
+                const data = await response.json();
+                output.textContent = data.output || data.error;
+                showStatus(data.error ? 'error' : 'success', 
+                    data.error ? 'エラーが発生しました' : '正常に実行されました');
+                
+            } catch (error) {
+                output.textContent = `通信エラー: ${error.message}`;
+                showStatus('error', 'サーバーとの通信に失敗しました');
+            }
+        }
+
+        // グループ参加処理
+        async function joinGroup() {
+            const ipAddress = ipAddressInput.value;
+            const statusDiv = document.getElementById('statusMessage');
+
+            if (!ipAddress) {
+                showStatus('error', 'IPアドレスを入力してください', statusDiv);
+                return;
+            }
+
+            try {
+                const response = await fetch('/save-code/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `ip_address=${encodeURIComponent(ipAddress)}`,
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showStatus('success', 'グループに参加しました', statusDiv);
+                    localStorage.removeItem('codeDraft'); // ドラフトクリア
+                    checkGroupStatus(); // グループ状態を更新
+                    loadGroupMembers(ipAddress); // メンバーリストを更新
+                } else {
+                    showStatus('error', data.message || '参加に失敗しました', statusDiv);
+                }
+            } catch (error) {
+                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
+            }
+        }
+
+        // グループから抜ける処理
+        async function leaveGroup() {
+            const ipAddress = ipAddressInput.value;
+            const statusDiv = document.getElementById('statusMessage');
+
+            if (!ipAddress) {
+                showStatus('error', 'IPアドレスを入力してください', statusDiv);
+                return;
+            }
+
+            try {
+                const response = await fetch('/leave-group/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `ip_address=${encodeURIComponent(ipAddress)}`,
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showStatus('success', 'グループから抜けました', statusDiv);
+                    checkGroupStatus(); // グループ状態を更新
+                    loadGroupMembers(ipAddress); // メンバーリストを更新
+                } else {
+                    showStatus('error', data.message || 'グループからの脱退に失敗しました', statusDiv);
+                }
+            } catch (error) {
+                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
+            }
+        }
+
+        // グループ参加状態をチェック
+        async function checkGroupStatus() {
+            const ipAddress = ipAddressInput.value;
+            if (!ipAddress) return;
+
+            try {
+                const response = await fetch('/get-group-codes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `ip_address=${encodeURIComponent(ipAddress)}`,
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const isMember = data.members.includes("{{ user.username }}");
+                    if (isMember) {
+                        document.getElementById('groupStatus').style.display = 'block';
+                        document.querySelector('.leave-btn').style.display = 'inline-block';
+                        document.querySelector('.group-btn').style.display = 'none';
+                    } else {
+                        document.getElementById('groupStatus').style.display = 'none';
+                        document.querySelector('.leave-btn').style.display = 'none';
+                        document.querySelector('.group-btn').style.display = 'inline-block';
+                    }
+                }
+            } catch (error) {
+                console.error('グループ状態の確認中にエラーが発生しました:', error);
+            }
+        }
+
+        // メンバーリスト更新
+        async function loadGroupMembers(ipAddress) {
+            try {
+                const response = await fetch('/get-group-codes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `ip_address=${encodeURIComponent(ipAddress)}`,
+                });
+
+                const data = await response.json();
+                const memberList = document.getElementById('groupMembers');
+                if (data.status === 'success') {
+                    memberList.innerHTML = data.members.map(m => `
+                        <li class="member-item">${m}</li>
+                    `).join('');
+                } else {
+                    memberList.innerHTML = '<li>メンバーを取得できませんでした</li>';
+                }
+            } catch (error) {
+                console.error('メンバー取得エラー:', error);
+            }
+        }
+
+        // ステータス表示
+        function showStatus(type, message, element = document.getElementById('statusMessage')) {
+            element.className = `status-message ${type}`;
+            element.innerHTML = `
+                <strong>${type === 'success' ? '✅' : '⚠️'}</strong>
+                ${message}
+            `;
+        }
+
+        // ページ読み込み時にグループ状態を確認
+        window.addEventListener('load', () => {
+            checkGroupStatus();
+        });
+    </script>
+</body>
+</html>
