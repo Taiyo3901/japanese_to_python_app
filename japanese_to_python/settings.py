@@ -15,6 +15,15 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-development-key')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT', 'False').lower() in ['true', '1', 'yes']
+
+# Railway環境判定後の設定
+if RAILWAY_ENVIRONMENT:
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{host}' for host in ALLOWED_HOSTS if host != 'localhost'
+    ] + ['http://localhost:8000']
+    DEBUG = False  # 本番環境では必ずFalseに
+else:
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
@@ -80,15 +89,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'japanese_to_python.wsgi.application'
 
-# Database configuration for Railway
+# 修正後のデータベース設定
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3'),
+        default=config('DATABASE_URL', 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')),
         conn_max_age=600,
         ssl_require=not DEBUG
     )
 }
 
+# エラーチェック用のコードを追加
+if not DATABASES['default']:  # データベース設定が空の場合
+    raise ValueError('Database configuration error! Check DATABASE_URL')
+
+# SQLite用のフォールバック設定（PostgreSQL接続時は無視）
+if 'sqlite' in DATABASES['default'].get('ENGINE', ''):
+    DATABASES['default']['OPTIONS'] = {
+        'timeout': 20,
+    }
+    
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
