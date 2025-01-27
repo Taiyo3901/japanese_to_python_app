@@ -14,8 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-development-key')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# Railway環境変数に対応したALLOWED_HOSTS設定
-RAILWAY_ENVIRONMENT = config('RAILWAY_ENVIRONMENT', default=False, cast=bool)
+RAILWAY_ENVIRONMENT = os.environ.get('RAILWAY_ENVIRONMENT', 'False').lower() in ['true', '1', 'yes']
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
