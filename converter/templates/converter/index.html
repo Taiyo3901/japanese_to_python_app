@@ -187,8 +187,6 @@
             
             <div id="statusMessage"></div>
             <div id="groupStatus" style="display: none;">
-                <p>現在、グループに参加しています。</p>
-            </div>
             
             <h3>グループメンバー</h3>
             <ul class="member-list" id="groupMembers"></ul>
@@ -205,7 +203,7 @@
             if (editor.value.trim() && ipAddressInput.value.trim()) {
                 saveCode();
             }
-        }, 5000); // 5秒ごとに保存
+        }, 2000);
 
         async function saveCode() {
             const ipAddress = ipAddressInput.value;
@@ -276,14 +274,14 @@
                 const data = await response.json();
                 if (data.status === 'success') {
                     showStatus('success', 'グループに参加しました', statusDiv);
-                    localStorage.removeItem('codeDraft'); // ドラフトクリア
-                    checkGroupStatus(); // グループ状態を更新
-                    loadGroupMembers(ipAddress); // メンバーリストを更新
+                    localStorage.removeItem('codeDraft');
+                    checkGroupStatus();
+                    loadGroupMembers(ipAddress);
                 } else {
                     showStatus('error', data.message || '参加に失敗しました', statusDiv);
                 }
             } catch (error) {
-                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
+                showStatus('error', '参加に失敗しました', statusDiv);
             }
         }
 
@@ -315,7 +313,7 @@
                     showStatus('error', data.message || 'グループからの脱退に失敗しました', statusDiv);
                 }
             } catch (error) {
-                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
+                showStatus('error', 'グループからの脱退に失敗しました', statusDiv);
             }
         }
 
