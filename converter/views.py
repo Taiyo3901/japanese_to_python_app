@@ -12,7 +12,7 @@ import subprocess
 import re
 import tempfile
 from django.contrib.auth.decorators import login_required
-import os
+
 
 def convert_to_python(japanese_code):
     replacements = [
@@ -39,7 +39,6 @@ def convert_to_python(japanese_code):
 
         # **インデント調整**
         if re.match(r'(elif|else):', line):  
-            # elif や else の場合はインデントレベルを一段戻す
             if indent_stack:
                 indent_level = indent_stack.pop()  
         
