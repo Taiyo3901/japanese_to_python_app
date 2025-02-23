@@ -9,60 +9,108 @@ from django.contrib.auth.models import User
 from .models import Group, GroupCode, UserGroup
 from .forms import CustomUserCreationForm
 import subprocess
+import re
+import tempfile
 from django.contrib.auth.decorators import login_required
+import os
 
-
-def translate_japanese_code(japanese_code):
-    """日本語コードをPythonコードに変換する"""
-    lines = japanese_code.split('\n')
+def convert_to_python(japanese_code):
+    replacements = [
+        (r'もし\s*(.*?)\s*ならば', r'if \1:'),
+        (r'そうでなくもし\s*(.*?)\s*ならば', r'elif \1:'),
+        (r'そうでなければ', 'else:'),
+        (r'表示する\((.*?)\)', r'print(\1)'),
+        (r'入力する\((.*?)\)', r'input(\1)'),
+        (r'(\w+)を(\d+)から(\d+)まで(\d+)ずつ繰り返す', r'for \1 in range(\2, \3, \4):'),
+        (r'(\w+)を(\d+)から(\d+)まで繰り返す', r'for \1 in range(\2, \3):'),
+        (r'(\w+)が(.+?)の間繰り返す', r'while \1 \2:'),
+    ]
     python_code = []
-    for line in lines:
-        line = line.strip()
-        if line.startswith('もし'):
-            condition = line.replace('もし', '').replace('ならば', '').strip()
-            python_code.append(f'if {condition}:')
-        elif line.startswith('そうでなくもし'):
-            condition = line.replace('そうでなくもし', '').replace('ならば', '').strip()
-            python_code.append(f'elif {condition}:')
-        elif line.startswith('そうでなければ'):
-            python_code.append('else:')
-        elif '表示する' in line:
-            content = line.replace('表示する', '').strip().strip('()').strip('"').strip("'")
-            python_code.append(f'print("{content}")')
-        elif '入力する' in line:
-            # 入力する("メッセージ") → input("メッセージ")
-            content = line.replace('入力する', '').strip().strip('()').strip('"').strip("'")
-            python_code.append(f'input("{content}")')
-        elif '繰り返す' in line:
-            if 'から' in line and 'まで' in line:
-                var = line.split('を')[0].strip()
-                start = line.split('から')[1].split('まで')[0].strip()
-                step = line.split('ずつ')[0].split('まで')[1].strip()
-                python_code.append(f'for {var} in range({start}, {step}):')
-            else:
-                condition = line.split('の間')[0].strip()
-                python_code.append(f'while {condition}:')
-        elif '=' in line:
-            python_code.append(line)
+    indent_level = 0  # インデントレベル
+    indent_stack = []  # インデント管理のためのスタック
+
+    for line in japanese_code.split("\n"):
+        original_line = line  # 元の行を保持
+        line = line.strip()  # 前後の空白を削除
+
+        # 変換処理
+        for pattern, replacement in replacements:
+            line = re.sub(pattern, replacement, line)
+
+        # **インデント調整**
+        if re.match(r'(elif|else):', line):  
+            # elif や else の場合はインデントレベルを一段戻す
+            if indent_stack:
+                indent_level = indent_stack.pop()  
+        
+        # **インデントを適用**
+        if line.endswith(":"):  
+            python_code.append("    " * indent_level + line)
+            indent_stack.append(indent_level)  
+            indent_level += 1  
+        elif line:  
+            python_code.append("    " * indent_level + line)
         else:
-            if line.startswith('|') or line.startswith('└'):
-                python_code.append(f'    {line[1:].strip()}')
-            else:
-                python_code.append(line)
-    return '\n'.join(python_code)
+            python_code.append(line)  
+
+        print(f"変換前: {original_line} → 変換後: {line}")
+
+    result = "\n".join(python_code)
+
+    if not result.strip():
+        print("エラー: 変換後のPythonコードが空です！")
+
+    return result
 
 @csrf_exempt
 def run_code(request):
     if request.method == 'POST':
         japanese_code = request.POST.get('japanese_code', '')
+
         try:
-            python_code = translate_japanese_code(japanese_code)
-            result = subprocess.run(['python', '-c', python_code], capture_output=True, text=True)
-            output = result.stdout if result.returncode == 0 else result.stderr
+            print(f"受け取った日本語コード:\n{japanese_code}")  # 🛠 デバッグ: 入力確認
+
+            # 日本語コードを Python に変換
+            if re.search(r'[ぁ-んァ-ン一-龥]', japanese_code):
+                python_code = convert_to_python(japanese_code)
+            else:
+                python_code = japanese_code  # Pythonコードならそのまま実行
+
+            print(f"変換後のPythonコード:\n{python_code}")  # 🛠 デバッグ: 変換後のPython確認
+
+            # もし python_code が空ならエラーを返す
+            if not python_code.strip():
+                return JsonResponse({'error': 'Pythonコードが空です。'}, status=400)
+
+            # 一時ファイルを作成
+            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py', encoding='utf-8') as temp_file:
+                temp_file.write(python_code)
+                temp_file_path = temp_file.name
+
+            # Python 3 で実行
+            result = subprocess.run(
+                ['python', temp_file_path],  # 環境によっては ['python', temp_file_path] に変更
+                capture_output=True, text=True, shell=False
+            )
+
+            # 実行結果を取得
+            output = result.stdout.strip()
+            error_output = result.stderr.strip()
+
+            # エラーがあれば、それも一緒に表示
+            if error_output:
+                output += "\n" + error_output
+
+            print(f"標準出力:\n{output}")  # 🛠 デバッグ: 実行結果を確認
+
             return JsonResponse({'output': output})
+
         except Exception as e:
+            print(f"エラー発生: {e}")  # 🛠 デバッグ: 例外処理のエラー確認
             return JsonResponse({'error': str(e)}, status=500)
+
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 @csrf_exempt
 @login_required

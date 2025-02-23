@@ -49,6 +49,7 @@
             font-family: 'Courier New', monospace;
             margin-bottom: 1rem;
             resize: vertical;
+            tab-size: 4; /* Tabキーの幅を4スペースに設定 */
         }
 
         button {
@@ -187,6 +188,8 @@
             
             <div id="statusMessage"></div>
             <div id="groupStatus" style="display: none;">
+                <p>現在、グループに参加しています。</p>
+            </div>
             
             <h3>グループメンバー</h3>
             <ul class="member-list" id="groupMembers"></ul>
@@ -203,7 +206,7 @@
             if (editor.value.trim() && ipAddressInput.value.trim()) {
                 saveCode();
             }
-        }, 2000);
+        }, 5000); // 5秒ごとに保存
 
         async function saveCode() {
             const ipAddress = ipAddressInput.value;
@@ -274,14 +277,14 @@
                 const data = await response.json();
                 if (data.status === 'success') {
                     showStatus('success', 'グループに参加しました', statusDiv);
-                    localStorage.removeItem('codeDraft');
-                    checkGroupStatus();
-                    loadGroupMembers(ipAddress);
+                    localStorage.removeItem('codeDraft'); // ドラフトクリア
+                    checkGroupStatus(); // グループ状態を更新
+                    loadGroupMembers(ipAddress); // メンバーリストを更新
                 } else {
                     showStatus('error', data.message || '参加に失敗しました', statusDiv);
                 }
             } catch (error) {
-                showStatus('error', '参加に失敗しました', statusDiv);
+                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
             }
         }
 
@@ -313,7 +316,7 @@
                     showStatus('error', data.message || 'グループからの脱退に失敗しました', statusDiv);
                 }
             } catch (error) {
-                showStatus('error', 'グループからの脱退に失敗しました', statusDiv);
+                showStatus('error', 'サーバーエラーが発生しました', statusDiv);
             }
         }
 
@@ -386,6 +389,21 @@
         // ページ読み込み時にグループ状態を確認
         window.addEventListener('load', () => {
             checkGroupStatus();
+        });
+
+        // Tabキーのサポート
+        editor.addEventListener('keydown', function (e) {
+            if (e.key === 'Tab') {
+                e.preventDefault(); // デフォルトのTab動作を無効化
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                // 4つのスペースを挿入
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+
+                // カーソル位置を調整
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
         });
     </script>
 </body>
