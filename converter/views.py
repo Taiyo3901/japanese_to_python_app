@@ -13,44 +13,46 @@ import re
 import tempfile
 from django.contrib.auth.decorators import login_required
 
-
 def convert_to_python(japanese_code):
     replacements = [
-        (r'もし\s*(.*?)\s*ならば', r'if \1:'),
-        (r'そうでなくもし\s*(.*?)\s*ならば', r'elif \1:'),
-        (r'そうでなければ', 'else:'),
-        (r'表示する\((.*?)\)', r'print(\1)'),
-        (r'入力する\((.*?)\)', r'input(\1)'),
-        (r'(\w+)を(\d+)から(\d+)まで(\d+)ずつ繰り返す', r'for \1 in range(\2, \3, \4):'),
-        (r'(\w+)を(\d+)から(\d+)まで繰り返す', r'for \1 in range(\2, \3):'),
-        (r'(\w+)が(.+?)の間繰り返す', r'while \1 \2:'),
+        (r'そうでなくもし\s*(.*?)\s*ならば', r'elif \1:'), 
+        (r'もし\s*(.*?)\s*ならば', r'if \1:'), 
+        (r'そうでなければ', 'else:'),  
+        (r'表示する\((.*?)\)', r'print(\1)'),  
+        (r'入力する\((.*?)\)', r'input(\1)'),  
+        (r'(\w+)を(\d+)から(\d+)まで(\d+)ずつ繰り返す', r'for \1 in range(\2, \3, \4):'),  
+        (r'(\w+)を(\d+)から(\d+)まで繰り返す', r'for \1 in range(\2, \3):'),  
+        (r'(\w+)が(.+?)の間繰り返す', r'while \1 \2:'),  
     ]
+
     python_code = []
-    indent_level = 0  # インデントレベル
-    indent_stack = []  # インデント管理のためのスタック
+    indent_level = 0
+    indent_stack = []
 
     for line in japanese_code.split("\n"):
-        original_line = line  # 元の行を保持
-        line = line.strip()  # 前後の空白を削除
+        original_line = line
+        line = line.strip()
 
-        # 変換処理
         for pattern, replacement in replacements:
             line = re.sub(pattern, replacement, line)
 
-        # **インデント調整**
-        if re.match(r'(elif|else):', line):  
-            if indent_stack:
-                indent_level = indent_stack.pop()  
-        
-        # **インデントを適用**
-        if line.endswith(":"):  
+        if line.endswith(":"):
+            if line.startswith(("elif", "else")):
+                if indent_stack:
+                    indent_level = indent_stack.pop()
+
             python_code.append("    " * indent_level + line)
-            indent_stack.append(indent_level)  
-            indent_level += 1  
-        elif line:  
+
+            if not line.startswith(("elif", "else")):
+                indent_stack.append(indent_level)
+
+            indent_level += 1
+
+        elif line:
             python_code.append("    " * indent_level + line)
+
         else:
-            python_code.append(line)  
+            python_code.append(line)
 
         print(f"変換前: {original_line} → 変換後: {line}")
 
@@ -60,6 +62,7 @@ def convert_to_python(japanese_code):
         print("エラー: 変換後のPythonコードが空です！")
 
     return result
+
 
 @csrf_exempt
 def run_code(request):
