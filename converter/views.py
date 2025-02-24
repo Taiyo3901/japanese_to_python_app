@@ -24,6 +24,7 @@ def convert_to_python(japanese_code):
         (r'(\w+)を(\d+)から(\d+)まで繰り返す', r'for \1 in range(\2, \3):'),  
         (r'(\w+)が(.+?)の間繰り返す', r'while \1 \2:'),  
     ]
+    
 
     python_code = []
     indent_level = 0
