@@ -8,49 +8,124 @@
         :root {
             --primary-color: #28a745;
             --secondary-color: #007bff;
-            --background-color: #f8f9fa;
-            --text-color: #333;
+            --background-color: #2f3232;
+            --text-color: #fff;
+            --menu-width-closed: 30px;
+            --menu-height-closed: 30px;
+            --menu-width-open: 200px;
+            --menu-height-open: 600px;
         }
 
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 2rem;
+            margin: 0;
             background-color: var(--background-color);
             color: var(--text-color);
+            height: 100%;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
+            height: 100%;
+            display: flex;
         }
 
-        .auth-info {
-            margin-bottom: 2rem;
+        .menu {
+            background: #1d2020;
+            color: #fff;
+            height: 100%;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: var(--menu-width-closed);
+            height: var(--menu-height-closed);
+            white-space: nowrap;
+            overflow: hidden;
+            transition: width 0.2s ease-in-out;
+            transition: height 0.2s ease-in-out;
+            position: relative;
+            margin-right: 2rem;
             padding: 1rem;
-            background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .menu.open {
+            width: var(--menu-width-open);
+            height: var(--menu-height-open);
+        }
+
+        .contents {
+            background: var(--background-color);
+            color: var(--text-color);
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .brand {
+            height: 70px;
+            background-image: url('assets/images/logo.svg');
+            background-size: 150px 30px;
+            background-repeat: no-repeat;
+            background-position: left 12px center;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            line-height: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+            padding: 0 12px;
+            margin-bottom: 1rem; /* メニュー項目間の余白 */
+            background: #1d2020; /* auth-infoの背景色を統合 */
+            border-radius: 8px; /* auth-infoの角丸を統合 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* auth-infoの影を統合 */
+        }
+
+        .menu-item:hover {
+            background: #000000;
+        }
+
+        .menu-item .fa {
+            font-size: 19px;
+            width: var(--menu-width-closed);
+            width: var(--menu-height-closed);
+            text-align: center;
+        }
+
+        .menu-item span {
+            margin-left: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .menu.open .menu-item span {
+            opacity: 1;
+        }
+
         .code-section, .group-section {
             margin-bottom: 2rem;
-            background: white;
+            background: #1d2020;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         textarea {
-            width: 100%;
+            textarea {
+            width: 98%;
             height: 200px;
             padding: 1rem;
-            border: 2px solid #ddd;
+            border: 2px solid #444;
             border-radius: 6px;
             font-family: 'Courier New', monospace;
             margin-bottom: 1rem;
             resize: vertical;
             tab-size: 4; /* Tabキーの幅を4スペースに設定 */
-        }
+        }}
 
         button {
             padding: 0.8rem 1.5rem;
@@ -89,11 +164,12 @@
         }
 
         pre {
-            background-color: #f8f9fa;
+            background-color: #1d2020;
             padding: 1rem;
             border-radius: 6px;
             overflow-x: auto;
             white-space: pre-wrap;
+            color: #fff;
         }
 
         .group-form {
@@ -105,8 +181,10 @@
         input[type="text"] {
             flex: 1;
             padding: 0.8rem;
-            border: 2px solid #ddd;
+            border: 2px solid #444;
             border-radius: 6px;
+            background-color: #2f3232;
+            color: #fff;
         }
 
         .member-list {
@@ -119,7 +197,7 @@
 
         .member-item {
             padding: 0.5rem;
-            background: var(--background-color);
+            background: #2f3232;
             border-radius: 4px;
             text-align: center;
         }
@@ -143,70 +221,117 @@
 </head>
 <body>
     <div class="container">
-        <!-- 認証情報 -->
-        <div class="auth-info">
-            {% if user.is_authenticated %}
-                <p>👤 {{ user.username }} さん 
-                    <a href="{% url 'logout' %}" style="color: var(--secondary-color);">ログアウト</a>
-                    {% if user.is_staff %}
-                        | <a href="{% url 'admin_dashboard' %}" style="color: var(--primary-color);">管理者ダッシュボード</a>
-                    {% endif %}
-                </p>
-            {% else %}
-                <p>
-                    <a href="{% url 'login' %}" style="color: var(--secondary-color);">ログイン</a> | 
-                    <a href="{% url 'register' %}" style="color: var(--primary-color);">新規登録</a>
-                </p>
-            {% endif %}
+        <!-- サイドメニュー -->
+        <div class="menu" id="menu">
+            <div class="brand"></div>
+            <ul>
+                <li class="menu-item" tabindex="0">
+                    <i class="fa fa-home"></i>
+                    <p>
+                        <a href="{}" >ホーム</a>
+                    </p>
+                </li>
+                <li class="menu-item" tabindex="0">
+                    <i class="fa fa-user"></i>
+                    <p>
+                        <a href="{}" >設定</a>
+                    </p>
+                </li>
+                </li>
+                <li class="menu-item" tabindex="0">
+                    <i class="fa fa-cog"></i>
+                    <p>
+                        <a href="{}" >辞書</a>
+                    </p>
+                </li>
+                <!-- auth-infoをmenu-itemとして追加 -->
+                <li class="menu-item" tabindex="0">
+                    <div class="auth-info">
+                        {% if user.is_authenticated %}
+                            <p>👤 {{ user.username }} さん 
+                                <a href="{% url 'logout' %}" style="color: var(--secondary-color);">ログアウト</a>
+                                {% if user.is_staff %}
+                                    | <a href="{% url 'admin_dashboard' %}" style="color: var(--primary-color);">管理者ダッシュボード</a>
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p>
+                                <a href="{% url 'login' %}" style="color: var(--secondary-color);">ログイン</a> | 
+                                <a href="{% url 'register' %}" style="color: var(--primary-color);">新規登録</a>
+                            </p>
+                        {% endif %}
+                    </div>
+                </li>
+            </ul>
         </div>
 
-        <!-- コード入力セクション -->
-        <div class="code-section">
-            <h2>コード入力</h2>
-            <textarea 
-                id="japaneseCode" 
-                placeholder="ここに日本語でコードを入力"
-            ></textarea>
-            <button class="run-btn" onclick="executeCode()">▶ 実行</button>
-            
-            <h2>実行結果</h2>
-            <pre id="output"></pre>
-        </div>
+        <!-- メインコンテンツ -->
+        <div class="contents" id="contents">
+            <!-- コード入力セクション -->
+            <div class="code-section">
+                <h2>コード入力</h2>
+                <textarea 
+                    id="japaneseCode" 
+                    placeholder="ここに日本語でコードを入力"
+                ></textarea>
+                <br>
+                <button class="run-btn" onclick="executeCode()">▶ 実行</button>
+                
+                <h2>実行結果</h2>
+                <pre id="output"></pre>
+            </div>
 
-        <!-- グループ管理セクション -->
-        <div class="group-section">
-            <h2>グループ管理</h2>
-            <div class="group-form">
-                <input 
-                    type="text" 
-                    id="ipAddress" 
-                    placeholder="例: 192.168.1.1"
-                >
-                <button class="group-btn" onclick="joinGroup()">グループ参加</button>
-                <button class="leave-btn" onclick="leaveGroup()" style="display: none;">グループを抜ける</button>
+            <!-- グループ管理セクション -->
+            <div class="group-section">
+                <h2>グループ管理</h2>
+                <div class="group-form">
+                    <input 
+                        type="text" 
+                        id="ipAddress" 
+                        placeholder="例: 192.168.1.1"
+                    >
+                    <button class="group-btn" onclick="joinGroup()">グループ参加</button>
+                    <button class="leave-btn" onclick="leaveGroup()" style="display: none;">グループを抜ける</button>
+                </div>
+                
+                <div id="statusMessage"></div>
+                <div id="groupStatus" style="display: none;">
+                    <p>現在、グループに参加しています。</p>
+                </div>
+                
+                <h3>グループメンバー</h3>
+                <ul class="member-list" id="groupMembers"></ul>
             </div>
-            
-            <div id="statusMessage"></div>
-            <div id="groupStatus" style="display: none;">
-                <p>現在、グループに参加しています。</p>
-            </div>
-            
-            <h3>グループメンバー</h3>
-            <ul class="member-list" id="groupMembers"></ul>
         </div>
     </div>
 
     <script>
+        // サイドメニューの開閉
+        document.addEventListener('DOMContentLoaded', () => {
+            const menu = document.getElementById('menu');
+            const contents = document.getElementById('contents');
+
+            menu.addEventListener('click', () => {
+                menu.classList.toggle('open');
+            });
+
+            // メニュー外をクリックしたらメニューを閉じる
+            document.addEventListener('click', (event) => {
+                if (!menu.contains(event.target) && !contents.contains(event.target)) {
+                    menu.classList.remove('open');
+                }
+            });
+        });
+
         // 自動保存機能
         const editor = document.getElementById('japaneseCode');
         const ipAddressInput = document.getElementById('ipAddress');
 
-        // 数秒ごとにコードを保存
         setInterval(() => {
             if (editor.value.trim() && ipAddressInput.value.trim()) {
                 saveCode();
             }
-        }, 2000); // 2秒ごとに保存
+        }, 2000); // 5秒ごとに保存
 
         async function saveCode() {
             const ipAddress = ipAddressInput.value;
@@ -277,9 +402,9 @@
                 const data = await response.json();
                 if (data.status === 'success') {
                     showStatus('success', 'グループに参加しました', statusDiv);
-                    localStorage.removeItem('codeDraft'); // ドラフトクリア
-                    checkGroupStatus(); // グループ状態を更新
-                    loadGroupMembers(ipAddress); // メンバーリストを更新
+                    localStorage.removeItem('codeDraft');
+                    checkGroupStatus();
+                    loadGroupMembers(ipAddress);
                 } else {
                     showStatus('error', data.message || '参加に失敗しました', statusDiv);
                 }
@@ -310,8 +435,8 @@
                 const data = await response.json();
                 if (data.status === 'success') {
                     showStatus('success', 'グループから抜けました', statusDiv);
-                    checkGroupStatus(); // グループ状態を更新
-                    loadGroupMembers(ipAddress); // メンバーリストを更新
+                    checkGroupStatus();
+                    loadGroupMembers(ipAddress);
                 } else {
                     showStatus('error', data.message || 'グループからの脱退に失敗しました', statusDiv);
                 }
@@ -398,10 +523,7 @@
                 const start = this.selectionStart;
                 const end = this.selectionEnd;
 
-                // 4つのスペースを挿入
                 this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-
-                // カーソル位置を調整
                 this.selectionStart = this.selectionEnd = start + 4;
             }
         });

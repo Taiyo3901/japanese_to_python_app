@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロフィール設定</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1d2020, #2f3232);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .profile-container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .profile-container input[type="text"],
+        .profile-container textarea,
+        .profile-container input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+            background: #333;
+            color: #fff;
+        }
+
+        .profile-container textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        .profile-container button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #555;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .profile-container button:hover {
+            background: #777;
+        }
+
+        .profile-container .icon-preview {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .profile-container .icon-preview img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h1>プロフィール設定</h1>
+        <div class="icon-preview">
+            <img id="icon-preview" src="https://via.placeholder.com/80" alt="アイコン">
+        </div>
+        <label for="name">名前</label>
+        <input type="text" id="name" placeholder="名前を入力してください">
+
+        <label for="icon">アイコン画像</label>
+        <input type="file" id="icon" accept="image/*" onchange="updateIcon()">
+
+        <label for="comment">コメント</label>
+        <textarea id="comment" placeholder="コメントを入力してください"></textarea>
+
+        <button onclick="saveProfile()">保存</button>
+    </div>
+
+    <script>
+        function updateIcon() {
+            const fileInput = document.getElementById('icon');
+            const iconPreview = document.getElementById('icon-preview');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    iconPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('name').value;
+            const fileInput = document.getElementById('icon');
+            const comment = document.getElementById('comment').value;
+
+            // アイコン画像をBase64形式で保存
+            let iconBase64 = '';
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    iconBase64 = e.target.result;
+                    localStorage.setItem('profile', JSON.stringify({
+                        name: name,
+                        icon: iconBase64,
+                        comment: comment
+                    }));
+                    alert('プロフィールが保存されました！');
+                    window.location.href = 'profile_view.html'; // プロフィール表示ページへ遷移
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                localStorage.setItem('profile', JSON.stringify({
+                    name: name,
+                    icon: '',
+                    comment: comment
+                }));
+                alert('プロフィールが保存されました！');
+                window.location.href = 'profile_view.html'; // プロフィール表示ページへ遷移
+            }
+        }
+    </script>
+</body>
+</html>
