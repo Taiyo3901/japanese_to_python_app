@@ -223,9 +223,11 @@ def create_group(request):
 def home(request):
     return render(request, 'converter/home.html')
 
+@staff_member_required
 def setting(request):
     return render(request, 'converter/setting.html')
 
+@staff_member_required
 def dictionally(request):
     return render(request, 'converter/dictionally.html')
 

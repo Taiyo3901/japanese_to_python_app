@@ -15,7 +15,7 @@ urlpatterns = [
     path('create-group/', views.create_group, name='create_group'),
     path('delete-group/<int:group_id>/', views.delete_group, name='delete_group'),
     path('view-member-code/<int:user_id>/', views.view_member_code, name='view_member_code'),
-    path('home/', views.home, name = 'home'),
-    path('setting/', views.setting, name = 'setting'),
-    path('dictionally/', views.dictionally, name = 'dictionally'),
+    path('home/', views.home, name ='home'),
+    path('setting/', views.setting, name ='setting'),
+    path('dictionally/', views.dictionally, name ='dictionally'),
 ]
