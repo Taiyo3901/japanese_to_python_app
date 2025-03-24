@@ -222,7 +222,7 @@ def create_group(request):
 
 @staff_member_required
 def home(request):
-    return render(request 'converter/home.html')
+    return render(request, 'converter/home.html')
 
 @staff_member_required
 def delete_group(request, group_id):
