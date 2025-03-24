@@ -221,6 +221,10 @@ def create_group(request):
     return render(request, 'converter/create_group.html')
 
 @staff_member_required
+def home(request):
+    return render(request 'converter/home.html')
+
+@staff_member_required
 def delete_group(request, group_id):
     group = Group.objects.filter(id=group_id).first()
     if group:
