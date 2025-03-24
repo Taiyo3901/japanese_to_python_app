@@ -16,4 +16,6 @@ urlpatterns = [
     path('delete-group/<int:group_id>/', views.delete_group, name='delete_group'),
     path('view-member-code/<int:user_id>/', views.view_member_code, name='view_member_code'),
     path('home/', views.home, name = 'home'),
+    path('setting/', views.setting, name = 'setting'),
+    path('dictionally/', views.dictionally, name = 'dictionally'),
 ]
